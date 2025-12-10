@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioSync Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Glassmorphism Effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-10 font-sans">
+
+    <div class="max-w-5xl mx-auto mb-10 flex justify-between items-center">
+        <div>
+            <h1 class="text-4xl font-bold text-blue-900">BioSync Admin</h1>
+            <p class="text-gray-500">Live Attendance Feed</p>
+        </div>
+        <div class="bg-white px-6 py-3 rounded-xl shadow-sm">
+            <span class="text-gray-400 text-sm">Status</span>
+            <div class="flex items-center gap-2">
+                <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <span class="font-semibold text-green-700">Live Connected</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-5xl mx-auto glass rounded-3xl shadow-xl overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-blue-900 text-white">
+                <tr>
+                    <th class="p-5 text-sm font-light">EMPLOYEE ID</th>
+                    <th class="p-5 text-sm font-light">PHOTO</th>
+                    <th class="p-5 text-sm font-light">DATE</th>
+                    <th class="p-5 text-sm font-light">TIME</th>
+                    <th class="p-5 text-sm font-light">STATUS</th>
+                </tr>
+            </thead>
+            <tbody id="table-body" class="divide-y divide-gray-200">
+                </tbody>
+        </table>
+        <div id="loading" class="p-10 text-center text-gray-500">Loading records...</div>
+    </div>
+
+    <script type="module">
+        // Import Firebase Functions
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // 🔴🔴🔴 PASTE YOUR CONFIG HERE 🔴🔴🔴
+        const firebaseConfig = {
+            apiKey: "AIzaSyARyIRn-fY6fX4uxHpe-XTGkIlLXbLlyyE",
+            authDomain: "biosync-attendance.firebaseapp.com",
+            projectId: "biosync-attendance",
+            storageBucket: "biosync-attendance.firebasestorage.app",
+            messagingSenderId: "180562765698",
+            appId: "1:180562765698:web:cb12c36b18f01d5c60519b"
+        };
+        // 🔴🔴🔴 END CONFIG 🔴🔴🔴
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const tableBody = document.getElementById("table-body");
+        const loadingDiv = document.getElementById("loading");
+
+        // Listen for Realtime Updates
+        const q = query(collection(db, "attendance"), orderBy("timestamp", "desc"));
+        
+        onSnapshot(q, (snapshot) => {
+            loadingDiv.style.display = "none";
+            tableBody.innerHTML = ""; // Clear table before adding new data
+
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                
+                // Handle Base64 Image
+                let imageSrc = "https://via.placeholder.com/50";
+                if (data.isBase64 && data.photoData) {
+                    imageSrc = `data:image/jpeg;base64,${data.photoData}`;
+                } else if (data.photoUri) {
+                    imageSrc = data.photoUri;
+                }
+
+                // Create Row HTML
+                const row = `
+                    <tr class="hover:bg-blue-50 transition-colors">
+                        <td class="p-5 font-bold text-gray-700">#${data.id || "Unknown"}</td>
+                        <td class="p-5">
+                            <img src="${imageSrc}" class="w-12 h-12 rounded-full border-2 border-white shadow-md object-cover">
+                        </td>
+                        <td class="p-5 text-gray-600">${data.date}</td>
+                        <td class="p-5 font-mono text-blue-600">${data.time}</td>
+                        <td class="p-5">
+                            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold uppercase">Verified</span>
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        });
+    </script>
+</body>
+</html>
